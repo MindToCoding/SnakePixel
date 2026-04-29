@@ -1240,8 +1240,10 @@
             document.getElementById('topLevel').textContent = '1';
             
             isRunning = false;
+            isPaused = false;
             
             document.getElementById('modeIntroOverlay').classList.remove('hidden');
+            document.getElementById('pauseOverlay').classList.add('hidden');
             draw();
         }
 
