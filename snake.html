@@ -854,8 +854,11 @@
             slow: { active: false, duration: 0, maxDuration: 5000 },
             double: { active: false, duration: 0, maxDuration: 8000 },
             ghost: { active: false, duration: 0, maxDuration: 6000 },
-            shield: { active: false, duration: 0, maxDuration: 4000 }
+            shield: { active: false, duration: 0, maxDuration: 4000 },
+            burst: { active: false, duration: 0, maxDuration: 1000 }
         };
+
+        let keyPressTimestamps = [];
 
         function draw() {
             const bgGradient = ctx.createRadialGradient(
@@ -999,7 +1002,8 @@
                         slow: '#87ceeb',
                         double: '#ff69b4',
                         ghost: '#d3d3d3',
-                        shield: '#90ee90'
+                        shield: '#90ee90',
+                        burst: '#ff4500'
                     };
                     ctx.fillStyle = colors[effectName] || '#ffffff';
                     ctx.globalAlpha = 0.3;
@@ -1013,7 +1017,7 @@
                     ctx.fillStyle = '#000';
                     ctx.font = 'bold 10px Arial';
                     ctx.textAlign = 'center';
-                    const emojis = { speed: '⚡', slow: '❄', double: '×2', ghost: '👻', shield: '🛡' };
+                    const emojis = { speed: '⚡', slow: '❄', double: '×2', ghost: '👻', shield: '🛡', burst: '🔥' };
                     ctx.fillText(emojis[effectName], x + 40, y + 14);
                     x += 90;
                 }
@@ -1185,16 +1189,30 @@
         
         function recalculateSpeed() {
             currentSpeed = baseSpeed;
-            
-            if (activeEffects.speed.active) {
+
+            if (activeEffects.burst.active) {
+                currentSpeed = Math.max(25, baseSpeed * 0.35);
+            } else if (activeEffects.speed.active) {
                 currentSpeed = Math.max(30, baseSpeed * 0.6);
             } else if (activeEffects.slow.active) {
                 currentSpeed = baseSpeed * 1.5;
             }
-            
+
             if (isRunning && !isPaused) {
                 clearInterval(gameLoop);
                 gameLoop = setInterval(gameLoopFn, currentSpeed);
+            }
+        }
+
+        function checkBurst() {
+            if (!isRunning) return;
+            keyPressTimestamps.push(Date.now());
+            keyPressTimestamps = keyPressTimestamps.filter(t => Date.now() - t < 600);
+
+            if (keyPressTimestamps.length >= 3 && !activeEffects.burst.active) {
+                activeEffects.burst.active = true;
+                activeEffects.burst.duration = activeEffects.burst.maxDuration;
+                recalculateSpeed();
             }
         }
 
@@ -1258,7 +1276,9 @@
                 effect.active = false;
                 effect.duration = 0;
             }
-            
+
+            keyPressTimestamps = [];
+
             if (currentMode === 'timed') {
                 timeRemaining = 60;
                 document.getElementById('timeValue').textContent = timeRemaining;
@@ -1346,7 +1366,9 @@
                 effect.active = false;
                 effect.duration = 0;
             }
-            
+
+            keyPressTimestamps = [];
+
             if (mode === 'timed') {
                 timeRemaining = 60;
                 document.getElementById('timeValue').textContent = timeRemaining;
@@ -1445,6 +1467,7 @@
                     if (dy !== 1) {
                         dx = 0;
                         dy = -1;
+                        checkBurst();
                     }
                     break;
                 case 'ArrowDown':
@@ -1452,6 +1475,7 @@
                     if (dy !== -1) {
                         dx = 0;
                         dy = 1;
+                        checkBurst();
                     }
                     break;
                 case 'ArrowLeft':
@@ -1459,6 +1483,7 @@
                     if (dx !== 1) {
                         dx = -1;
                         dy = 0;
+                        checkBurst();
                     }
                     break;
                 case 'ArrowRight':
@@ -1466,6 +1491,7 @@
                     if (dx !== -1) {
                         dx = 1;
                         dy = 0;
+                        checkBurst();
                     }
                     break;
                 case 'Space':
