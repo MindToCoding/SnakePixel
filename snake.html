@@ -551,15 +551,14 @@
     </style>
 </head>
 <body>
-    <div class="game-over-overlay" id="gameOverOverlay">
-        <h2 class="game-over-title">游戏结束</h2>
-        <p class="game-over-score">最终得分: <span id="finalScore">0</span></p>
-        <p class="high-score">最高分: <span id="highScore">0</span></p>
-        <button class="btn btn-start" onclick="restartGame()">再来一局</button>
-    </div>
-
     <div class="container">
         <div class="game-area">
+            <div class="game-over-overlay" id="gameOverOverlay">
+                <h2 class="game-over-title">游戏结束</h2>
+                <p class="game-over-score">最终得分: <span id="finalScore">0</span></p>
+                <p class="high-score">最高分: <span id="highScore">0</span></p>
+                <button class="btn btn-start" onclick="restartGame()">再来一局</button>
+            </div>
             <div class="game-stats">
                 <div class="stat-item">
                     <span class="stat-icon">🎯</span>
@@ -600,6 +599,11 @@
                     <div class="pause-title">游戏暂停</div>
                     <button class="mode-intro-btn" id="resumeBtn">继续游戏</button>
                 </div>
+            </div>
+            <div style="text-align: center; margin-top: 10px; font-size: 13px; color: rgba(255,255,255,0.35);">
+                <span>v1.0</span>
+                <span style="margin: 0 8px;">|</span>
+                <a href="https://github.com/MindToCoding/SnakePixel" target="_blank" style="color: rgba(255,255,255,0.35); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#00ff88'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">GitHub</a>
             </div>
         </div>
 
