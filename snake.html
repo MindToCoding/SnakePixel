@@ -767,7 +767,9 @@
                 <h2 class="game-over-title">游戏结束</h2>
                 <p class="game-over-score">最终得分: <span id="finalScore">0</span></p>
                 <p class="high-score">最高分: <span id="highScore">0</span></p>
-                <button class="btn btn-start" onclick="restartGame()">再来一局</button>
+                <p class="high-score" id="livesDisplay" style="font-size:16px; margin-bottom:15px;">❤️ × <span id="livesCount">3</span></p>
+                <button class="btn btn-start" id="reviveBtn" onclick="reviveGame()">复活</button>
+                <button class="btn btn-reset" onclick="restartGame()">重新开始</button>
             </div>
             <div class="game-stats">
                 <div class="stat-item">
@@ -1001,6 +1003,7 @@
         let currentMode = 'classic';
         let timeRemaining = 60;
         let timeLoop;
+        let lives = 3;
         
         let audioContext = null;
 
@@ -1370,6 +1373,11 @@
             return foodTypes[0];
         }
         
+        // 中心偏向随机：[0,1) 范围，峰值在中间，降低边缘概率
+        function centerRandom() {
+            return (Math.random() + Math.random()) / 2;
+        }
+
         function spawnFoods() {
             const targetFoodCount = Math.min(3 + Math.floor(score / 100), 6);
             const head = snake[0];
@@ -1380,8 +1388,8 @@
                 let attempts = 0;
                 do {
                     newFood = {
-                        x: Math.floor(Math.random() * tileCount),
-                        y: Math.floor(Math.random() * tileCount),
+                        x: Math.floor(centerRandom() * tileCount),
+                        y: Math.floor(centerRandom() * tileCount),
                         ...foodType
                     };
                     attempts++;
@@ -1553,6 +1561,7 @@
         renderLoop();
 
         function beginGame() {
+            lives = 3;
             snake = [
                 { x: 10, y: 10 },
                 { x: 9, y: 10 },
@@ -1768,8 +1777,61 @@
 
             document.getElementById('finalScore').textContent = score;
             document.getElementById('highScore').textContent = highScore;
+
+            // 复活逻辑
+            const reviveBtn = document.getElementById('reviveBtn');
+            const livesDisplay = document.getElementById('livesDisplay');
+            if (lives > 0) {
+                lives--;
+                document.getElementById('livesCount').textContent = lives;
+                livesDisplay.style.display = '';
+                reviveBtn.style.display = '';
+            } else {
+                livesDisplay.style.display = 'none';
+                reviveBtn.style.display = 'none';
+            }
+
             document.getElementById('gameOverOverlay').classList.add('show');
             document.getElementById('pauseOverlay').classList.add('hidden');
+        }
+
+        function reviveGame() {
+            document.getElementById('gameOverOverlay').classList.remove('show');
+            initAudio();
+
+            // 保持 score / length / level，重置蛇位置
+            const len = snake.length;
+            const startY = Math.floor(tileCount / 2);
+            const startX = Math.floor(tileCount * 0.4);
+            snake = [];
+            for (let i = 0; i < len; i++) {
+                snake.push({ x: ((startX - i) % tileCount + tileCount) % tileCount, y: startY });
+            }
+            dx = 1;
+            dy = 0;
+            isPaused = false;
+
+            // 移除与蛇重叠的食物
+            foods = foods.filter(f => !snake.some(s => s.x === f.x && s.y === f.y));
+
+            for (const effect of Object.values(activeEffects)) {
+                effect.active = false;
+                effect.duration = 0;
+            }
+
+            keyPressTimestamps = [];
+            snakeTrail = [];
+            particles = [];
+
+            playStartSound();
+            recalculateSpeed();
+            spawnFoods();
+
+            isRunning = true;
+            gameLoop = setInterval(gameLoopFn, currentSpeed);
+            if (currentMode === 'timed') {
+                timeLoop = setInterval(updateTime, 1000);
+            }
         }
 
         function restartGame() {
