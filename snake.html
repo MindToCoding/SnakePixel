@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>贪吃蛇游戏</title>
+    <title>SnakePixel - 贪吃蛇</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -548,9 +551,213 @@
             margin-bottom: 25px;
             text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
         }
+
+        /* ===== 新增炫酷效果 ===== */
+
+        /* 全局字体应用 */
+        h1, .game-over-title, .pause-title, .mode-intro-title,
+        .stat-num, .stat-value, .time-value, #topScore, #topLength, #topLevel {
+            font-family: 'Orbitron', monospace !important;
+        }
+
+        .mode-btn, .btn, .effect-notification, .countdown-number,
+        .score-popup, .food-item, .controls-list li, .stat-name {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* 全屏粒子背景 Canvas */
+        #bgCanvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* 新背景光晕层 */
+        .bg-glow {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -3;
+            background:
+                radial-gradient(ellipse 600px 400px at 20% 50%, rgba(0, 255, 136, 0.08) 0%, transparent 70%),
+                radial-gradient(ellipse 500px 500px at 80% 30%, rgba(0, 212, 255, 0.06) 0%, transparent 70%),
+                radial-gradient(ellipse 400px 600px at 50% 80%, rgba(180, 77, 255, 0.05) 0%, transparent 70%);
+            animation: glowDrift 12s ease-in-out infinite alternate;
+        }
+
+        @keyframes glowDrift {
+            0%   { transform: translate(0, 0) scale(1); }
+            50%  { transform: translate(20px, -10px) scale(1.05); }
+            100% { transform: translate(-10px, 15px) scale(0.95); }
+        }
+
+        /* 霓虹流光边框 — 游戏区域 */
+        .game-area {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-area::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: conic-gradient(
+                from 0deg,
+                #00ff88, #00d4ff, #ff2d95, #b44dff,
+                #ffd700, #00ff88
+            );
+            animation: spinBorder 6s linear infinite;
+            z-index: -1;
+        }
+
+        .game-area::after {
+            content: '';
+            position: absolute;
+            inset: 2px;
+            border-radius: 18px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+            backdrop-filter: blur(20px);
+            z-index: -1;
+        }
+
+        @keyframes spinBorder {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 覆盖掉原来 game-area 的背景和 border，由 ::after 接管 */
+        .game-area {
+            background: transparent !important;
+            border: none !important;
+            backdrop-filter: none !important;
+        }
+
+        /* Canvas 内部加光晕 */
+        canvas {
+            box-shadow:
+                inset 0 2px 10px rgba(0, 0, 0, 0.5),
+                0 0 40px rgba(0, 255, 136, 0.08),
+                0 0 80px rgba(0, 212, 255, 0.04) !important;
+        }
+
+        /* 屏幕震动 */
+        @keyframes shake {
+            0%, 100% { transform: translate(0); }
+            10% { transform: translate(-5px, 3px); }
+            20% { transform: translate(3px, -5px); }
+            30% { transform: translate(-4px, 5px); }
+            40% { transform: translate(5px, -3px); }
+            50% { transform: translate(-5px, -4px); }
+            60% { transform: translate(3px, 5px); }
+            70% { transform: translate(-4px, -5px); }
+            80% { transform: translate(5px, 3px); }
+            90% { transform: translate(-5px, 4px); }
+        }
+        .shake { animation: shake 0.4s ease-in-out; }
+
+        /* 倒数动画 */
+        .countdown-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
+            pointer-events: none;
+        }
+        .countdown-number {
+            font-family: 'Orbitron', monospace;
+            font-weight: 900;
+            font-size: 140px;
+            color: #fff;
+            text-shadow:
+                0 0 40px rgba(0, 255, 136, 0.9),
+                0 0 80px rgba(0, 255, 136, 0.5),
+                0 0 120px rgba(0, 255, 136, 0.3);
+            animation: countPop 0.7s ease-out forwards;
+            opacity: 0;
+        }
+        @keyframes countPop {
+            0%   { opacity: 0; transform: scale(3); filter: blur(8px); }
+            25%  { opacity: 1; transform: scale(1); filter: blur(0); }
+            75%  { opacity: 1; transform: scale(1); filter: blur(0); }
+            100% { opacity: 0; transform: scale(0.6); filter: blur(4px); }
+        }
+        /* GO! 特殊颜色 */
+        .countdown-go {
+            color: #ffd700;
+            text-shadow:
+                0 0 40px rgba(255, 215, 0, 0.9),
+                0 0 80px rgba(255, 215, 0, 0.5),
+                0 0 120px rgba(255, 215, 0, 0.3);
+        }
+
+        /* 按钮涟漪 */
+        .btn {
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .btn .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.35);
+            transform: scale(0);
+            animation: rippleAnim 0.6s ease-out forwards;
+            pointer-events: none;
+        }
+        @keyframes rippleAnim {
+            to { transform: scale(4); opacity: 0; }
+        }
+
+        /* 食物说明 + 控制面板字体优化 */
+        .food-guide h3, .controls h3 {
+            letter-spacing: 2px;
+        }
+
+        /* 弹窗增强光晕 */
+        .game-over-overlay {
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            box-shadow:
+                0 0 40px rgba(255, 107, 107, 0.15),
+                inset 0 0 40px rgba(255, 107, 107, 0.05);
+        }
+
+        .game-over-title {
+            font-size: 36px !important;
+            font-weight: 900 !important;
+            letter-spacing: 4px;
+        }
+
+        /* mode intro 面板光晕加强 */
+        .mode-intro-title {
+            text-shadow:
+                0 0 30px rgba(0, 255, 136, 0.6),
+                0 0 60px rgba(0, 255, 136, 0.3) !important;
+        }
+
+        /* 暂停面板增强 */
+        .pause-content .pause-title {
+            text-shadow:
+                0 0 30px rgba(0, 255, 136, 0.6),
+                0 0 60px rgba(0, 255, 136, 0.3) !important;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 800px) {
+            .game-area::before { display: none; }
+            .game-area { background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)) !important; }
+            .game-area::after { display: none; }
+        }
     </style>
 </head>
 <body>
+    <canvas id="bgCanvas"></canvas>
+    <div class="bg-glow"></div>
     <div class="container">
         <div class="game-area">
             <div class="game-over-overlay" id="gameOverOverlay">
@@ -599,6 +806,9 @@
                     <div class="pause-title">游戏暂停</div>
                     <button class="mode-intro-btn" id="resumeBtn">继续游戏</button>
                 </div>
+            </div>
+            <div class="countdown-overlay hidden" id="countdownOverlay">
+                <div class="countdown-number" id="countdownText">3</div>
             </div>
             <div style="text-align: center; margin-top: 10px; font-size: 13px; color: rgba(255,255,255,0.35);">
                 <span>v1.0</span>
@@ -864,6 +1074,13 @@
 
         let keyPressTimestamps = [];
 
+        // ===== 新增炫酷特效变量 =====
+        let snakeTrail = [];          // 蛇拖尾轨迹
+        let isShaking = false;        // 屏幕震动
+        let scoreAnimation = null;    // 分数动画
+        let bgParticles = [];         // 全屏背景粒子
+        const BG_PARTICLE_COUNT = 80;
+
         function draw() {
             const bgGradient = ctx.createRadialGradient(
                 canvas.width / 2, canvas.height / 2, 0,
@@ -908,7 +1125,27 @@
             ctx.lineWidth = 2;
             ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
             ctx.shadowBlur = 0;
-            
+
+            // === 蛇拖尾光效 ===
+            const trailLen = snakeTrail.length;
+            snakeTrail.forEach((pos, i) => {
+                const alpha = (i / trailLen) * 0.35;
+                const size = (i / trailLen) * (gridSize * 0.6);
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = '#00ff88';
+                ctx.shadowColor = '#00ff88';
+                ctx.shadowBlur = 20;
+                ctx.beginPath();
+                ctx.arc(
+                    pos.x * gridSize + gridSize / 2,
+                    pos.y * gridSize + gridSize / 2,
+                    size, 0, Math.PI * 2
+                );
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+            ctx.shadowBlur = 0;
+
             snake.forEach((segment, index) => {
                 const gradient = ctx.createRadialGradient(
                     segment.x * gridSize + gridSize / 2,
@@ -939,32 +1176,66 @@
                     gridSize - 4,
                     gridSize - 4
                 );
+
+                // === 蛇头眼睛 ===
+                if (index === 0) {
+                    const cx = segment.x * gridSize + gridSize / 2;
+                    const cy = segment.y * gridSize + gridSize / 2;
+                    const eyeOffset = 4;
+                    const eyeSize = 3;
+                    let ex1, ey1, ex2, ey2;
+                    if (dx === 1) { // 右
+                        ex1 = cx + 2; ey1 = cy - eyeOffset;
+                        ex2 = cx + 2; ey2 = cy + eyeOffset;
+                    } else if (dx === -1) { // 左
+                        ex1 = cx - 2; ey1 = cy - eyeOffset;
+                        ex2 = cx - 2; ey2 = cy + eyeOffset;
+                    } else if (dy === -1) { // 上
+                        ex1 = cx - eyeOffset; ey1 = cy - 2;
+                        ex2 = cx + eyeOffset; ey2 = cy - 2;
+                    } else { // 下
+                        ex1 = cx - eyeOffset; ey1 = cy + 2;
+                        ex2 = cx + eyeOffset; ey2 = cy + 2;
+                    }
+                    ctx.shadowBlur = 0;
+                    // 眼白
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath(); ctx.arc(ex1, ey1, eyeSize, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(ex2, ey2, eyeSize, 0, Math.PI * 2); ctx.fill();
+                    // 瞳孔
+                    ctx.fillStyle = '#111';
+                    ctx.beginPath(); ctx.arc(ex1, ey1, 1.5, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(ex2, ey2, 1.5, 0, Math.PI * 2); ctx.fill();
+                }
             });
             ctx.shadowBlur = 0;
             
             foods.forEach(foodItem => {
+                const pulse = Math.sin(Date.now() / 300 + foodItem.x + foodItem.y) * 0.15 + 1;
+                const r = (gridSize / 2 - 3) * pulse;
+
                 const foodGradient = ctx.createRadialGradient(
                     foodItem.x * gridSize + gridSize / 2,
                     foodItem.y * gridSize + gridSize / 2,
                     0,
                     foodItem.x * gridSize + gridSize / 2,
                     foodItem.y * gridSize + gridSize / 2,
-                    gridSize / 2
+                    gridSize / 2 * pulse
                 );
                 foodGradient.addColorStop(0, foodItem.color1);
                 foodGradient.addColorStop(0.5, foodItem.color1);
                 foodGradient.addColorStop(1, foodItem.color2);
-                
+
                 ctx.shadowColor = foodItem.color1;
-                ctx.shadowBlur = 12;
+                ctx.shadowBlur = 15 + Math.sin(Date.now() / 300) * 5;
                 ctx.fillStyle = foodGradient;
                 
                 if (foodItem.type === 'gold') {
                     ctx.beginPath();
                     for (let i = 0; i < 5; i++) {
                         const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
-                        const x = foodItem.x * gridSize + gridSize / 2 + Math.cos(angle) * (gridSize / 2 - 3);
-                        const y = foodItem.y * gridSize + gridSize / 2 + Math.sin(angle) * (gridSize / 2 - 3);
+                        const x = foodItem.x * gridSize + gridSize / 2 + Math.cos(angle) * r;
+                        const y = foodItem.y * gridSize + gridSize / 2 + Math.sin(angle) * r;
                         if (i === 0) ctx.moveTo(x, y);
                         else ctx.lineTo(x, y);
                     }
@@ -975,7 +1246,7 @@
                     ctx.arc(
                         foodItem.x * gridSize + gridSize / 2,
                         foodItem.y * gridSize + gridSize / 2,
-                        gridSize / 2 - 3,
+                        r,
                         0,
                         Math.PI * 2
                     );
@@ -1047,6 +1318,10 @@
             }
             
             snake.unshift(head);
+
+            // 更新蛇拖尾轨迹
+            snakeTrail.push({ x: head.x, y: head.y });
+            if (snakeTrail.length > 8) snakeTrail.shift();
             
             const eatenIndex = foods.findIndex(f => f.x === head.x && f.y === head.y);
             if (eatenIndex !== -1) {
@@ -1221,11 +1496,33 @@
         }
 
         function updateScore() {
-            document.getElementById('topScore').textContent = score;
+            animateNumber('topScore', score);
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('snakeHighScore', highScore.toString());
             }
+        }
+
+        function animateNumber(elId, target) {
+            const el = document.getElementById(elId);
+            const current = parseInt(el.textContent) || 0;
+            if (target === current) return;
+            const diff = target - current;
+            const steps = Math.min(Math.abs(diff), 20);
+            const stepVal = diff / steps;
+            let count = 0;
+            if (window.__scoreAnim) cancelAnimationFrame(window.__scoreAnim);
+            function step() {
+                count++;
+                const val = Math.round(current + stepVal * count);
+                el.textContent = val;
+                if (count < steps) {
+                    window.__scoreAnim = requestAnimationFrame(step);
+                } else {
+                    el.textContent = target;
+                }
+            }
+            step();
         }
 
         function updateLength() {
@@ -1249,20 +1546,7 @@
         }
         renderLoop();
 
-        function startGame() {
-            initAudio();
-            if (isRunning && !isPaused) return;
-            
-            if (isPaused) {
-                isPaused = false;
-                document.getElementById('pauseOverlay').classList.add('hidden');
-                gameLoop = setInterval(gameLoopFn, currentSpeed);
-                if (currentMode === 'timed') {
-                    timeLoop = setInterval(updateTime, 1000);
-                }
-                return;
-            }
-            
+        function beginGame() {
             snake = [
                 { x: 10, y: 10 },
                 { x: 9, y: 10 },
@@ -1273,9 +1557,10 @@
             score = 0;
             isPaused = false;
             foods = [];
+            snakeTrail = [];
             baseSpeed = currentMode === 'survival' ? 120 : 100;
             currentSpeed = baseSpeed;
-            
+
             for (const effect of Object.values(activeEffects)) {
                 effect.active = false;
                 effect.duration = 0;
@@ -1290,23 +1575,68 @@
             } else {
                 document.getElementById('timeDisplay').style.display = 'none';
             }
-            
+
             spawnFoods();
             updateScore();
             updateLength();
             document.getElementById('topLevel').textContent = '1';
-            
+
             isRunning = true;
             document.getElementById('gameOverOverlay').classList.remove('show');
 
             particles = [];
-            
+
             playStartSound();
             gameLoop = setInterval(gameLoopFn, currentSpeed);
-            
+
             if (currentMode === 'timed') {
                 timeLoop = setInterval(updateTime, 1000);
             }
+        }
+
+        function startGame() {
+            initAudio();
+            if (isRunning && !isPaused) return;
+
+            if (isPaused) {
+                isPaused = false;
+                document.getElementById('pauseOverlay').classList.add('hidden');
+                gameLoop = setInterval(gameLoopFn, currentSpeed);
+                if (currentMode === 'timed') {
+                    timeLoop = setInterval(updateTime, 1000);
+                }
+                return;
+            }
+            startCountdown();
+        }
+
+        function startCountdown() {
+            const overlay = document.getElementById('countdownOverlay');
+            const text = document.getElementById('countdownText');
+            const steps = ['3', '2', '1', 'GO!'];
+            let i = 0;
+
+            overlay.classList.remove('hidden');
+
+            function showNext() {
+                if (i >= steps.length) {
+                    overlay.classList.add('hidden');
+                    beginGame();
+                    return;
+                }
+                text.textContent = steps[i];
+                text.className = 'countdown-number';
+                if (steps[i] === 'GO!') {
+                    text.classList.add('countdown-go');
+                }
+                // 重新触发动画
+                text.style.animation = 'none';
+                void text.offsetHeight;
+                text.style.animation = '';
+                i++;
+                setTimeout(showNext, steps[i - 1] === 'GO!' ? 500 : 800);
+            }
+            showNext();
         }
         
         function updateTime() {
@@ -1422,7 +1752,14 @@
 
             createGameOverParticles();
             playGameOverSound();
-            
+
+            // 屏幕震动
+            const container = document.querySelector('.game-area');
+            container.classList.remove('shake');
+            void container.offsetHeight;
+            container.classList.add('shake');
+            setTimeout(() => container.classList.remove('shake'), 500);
+
             document.getElementById('finalScore').textContent = score;
             document.getElementById('highScore').textContent = highScore;
             document.getElementById('gameOverOverlay').classList.add('show');
@@ -1514,13 +1851,7 @@
         document.getElementById('modeIntroBtn').addEventListener('click', () => {
             initAudio();
             document.getElementById('modeIntroOverlay').classList.add('hidden');
-            spawnFoods();
-            isRunning = true;
-            playStartSound();
-            gameLoop = setInterval(gameLoopFn, currentSpeed);
-            if (currentMode === 'timed') {
-                timeLoop = setInterval(updateTime, 1000);
-            }
+            startCountdown();
         });
         
         document.getElementById('speedRange').addEventListener('input', (e) => {
@@ -1542,6 +1873,101 @@
         
         spawnFoods();
         draw();
+
+        // ===== 全屏背景粒子系统 =====
+        const bgCanvas = document.getElementById('bgCanvas');
+        const bgCtx = bgCanvas.getContext('2d');
+
+        function resizeBgCanvas() {
+            bgCanvas.width = window.innerWidth;
+            bgCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeBgCanvas);
+        resizeBgCanvas();
+
+        class BgParticle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * bgCanvas.width;
+                this.y = Math.random() * bgCanvas.height;
+                this.size = Math.random() * 2.5 + 0.5;
+                this.speedX = (Math.random() - 0.5) * 0.3;
+                this.speedY = (Math.random() - 0.5) * 0.3;
+                this.opacity = Math.random() * 0.5 + 0.15;
+                this.color = ['#00ff88', '#00d4ff', '#b44dff', '#ff2d95', '#ffd700'][Math.floor(Math.random() * 5)];
+                this.pulse = Math.random() * Math.PI * 2;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.pulse += 0.02;
+                if (this.x < 0 || this.x > bgCanvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > bgCanvas.height) this.speedY *= -1;
+            }
+            draw() {
+                const o = this.opacity * (0.7 + 0.3 * Math.sin(this.pulse));
+                bgCtx.fillStyle = this.color;
+                bgCtx.globalAlpha = o;
+                bgCtx.shadowColor = this.color;
+                bgCtx.shadowBlur = this.size * 6;
+                bgCtx.beginPath();
+                bgCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.shadowBlur = 0;
+            }
+        }
+
+        function initBgParticles() {
+            bgParticles = [];
+            for (let i = 0; i < BG_PARTICLE_COUNT; i++) {
+                bgParticles.push(new BgParticle());
+            }
+        }
+
+        function drawBgParticles() {
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            bgParticles.forEach(p => { p.update(); p.draw(); });
+            // 粒子连线效果（近距离时）
+            for (let i = 0; i < bgParticles.length; i++) {
+                for (let j = i + 1; j < bgParticles.length; j++) {
+                    const dx = bgParticles[i].x - bgParticles[j].x;
+                    const dy = bgParticles[i].y - bgParticles[j].y;
+                    const dist = dx * dx + dy * dy;
+                    if (dist < 180 * 180) {
+                        bgCtx.beginPath();
+                        bgCtx.moveTo(bgParticles[i].x, bgParticles[i].y);
+                        bgCtx.lineTo(bgParticles[j].x, bgParticles[j].y);
+                        bgCtx.strokeStyle = `rgba(0, 255, 136, ${0.06 * (1 - dist / (180 * 180))})`;
+                        bgCtx.lineWidth = 0.5;
+                        bgCtx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(drawBgParticles);
+        }
+
+        initBgParticles();
+        drawBgParticles();
+
+        // ===== 按钮涟漪效果 =====
+        function initRippleEffect() {
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    const rect = this.getBoundingClientRect();
+                    const ripple = document.createElement('span');
+                    ripple.className = 'ripple';
+                    const size = Math.max(rect.width, rect.height);
+                    ripple.style.width = ripple.style.height = size + 'px';
+                    ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+                    ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+                    this.appendChild(ripple);
+                    setTimeout(() => ripple.remove(), 600);
+                });
+            });
+        }
+        initRippleEffect();
     </script>
 </body>
 </html>
